@@ -23,6 +23,7 @@ wheels/
 .venv/
 venv/
 ENV/
+.env.example
 
 # uv
 .uv/
@@ -58,3 +59,6 @@ Thumbs.db
 
 # Debug output
 debug_output/
+
+# Folders
+testes/
