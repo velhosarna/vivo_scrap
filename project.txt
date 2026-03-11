@@ -1,0 +1,111 @@
+Este é um projeto de automação desenvolvido em Python para extrair dados de consumo de internet do portal **Vivo Gestão Empresas**. O script utiliza o Playwright para navegação, BeautifulSoup para o parsing do HTML e, conforme solicitado, **SQLite3** para o armazenamento local dos dados.
+
+---
+
+# Vivo Gestão Scraping & Monitoring
+
+Este projeto automatiza a coleta de informações de cota de dados, uso atual e porcentagem de consumo tanto para grupos gerais quanto para linhas específicas (filiais/restaurantes) dentro do portal da Vivo.
+
+## 🚀 Funcionalidades
+
+* **Automação de Login:** Realiza o acesso automático ao portal corporativo.
+* **Captura de Dados Gerais:** Extrai informações de grupos (ex: Restaurante, Alarme), incluindo cota total e cota não atribuída.
+* **Captura Detalhada por Linha:** Navega pelas subpáginas para extrair o consumo individual de cada linha telefônica/filial.
+* **Gerenciamento de Histórico:** Salva os dados em um banco de dados SQLite para acompanhamento temporal.
+* **Tratamento de Erros:** Sistema de logs robusto para registrar falhas de conexão ou mudanças na estrutura do site.
+
+## 🛠️ Tecnologias Utilizadas
+
+* **Python 3.x**
+* **Playwright:** Automação de navegador (Chromium).
+* **BeautifulSoup4:** Extração de dados do HTML.
+* **SQLite3:** Banco de dados relacional leve e sem servidor.
+* **Logging:** Registro de eventos e erros.
+
+---
+
+## 📂 Estrutura do Banco de Dados (SQLite3)
+
+O script organiza os dados em três tabelas principais:
+
+1. **`geral`**: Armazena o resumo de consumo por usuário e nome do grupo.
+2. **`filial`**: Cadastro das linhas telefônicas vinculadas a uma filial ou código.
+3. **`historico_uso`**: Registros temporais de consumo (uso de dados e porcentagem) vinculados a cada filial.
+
+---
+
+## 🔧 Configuração e Instalação
+
+### 1. Requisitos
+
+Certifique-se de ter o Python instalado e então instale as dependências:
+
+```bash
+pip install playwright beautifulsoup4
+playwright install chromium
+
+```
+
+### 2. Substituição para SQLite3
+
+Para utilizar o SQLite3 no lugar do MySQL, as conexões foram alteradas no código. Exemplo de como a conexão é estabelecida agora:
+
+```python
+import sqlite3
+
+# Conectando ao arquivo local
+conn = sqlite3.connect('vivo_gestao.db')
+cursor = conn.cursor()
+
+```
+
+> **Nota:** Nas queries SQL, o marcador de posição (placeholder) mudou de `%s` (MySQL) para `?` (SQLite).
+
+### 3. Inicialização do Banco
+
+Antes de rodar pela primeira vez, certifique-se de criar as tabelas:
+
+```sql
+CREATE TABLE IF NOT EXISTS geral (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user TEXT,
+    nome_grupo TEXT,
+    cota_grupo REAL,
+    nao_atribuida REAL,
+    cota_atribuida REAL,
+    uso_dados REAL,
+    porcentagem REAL
+);
+
+CREATE TABLE IF NOT EXISTS filial (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    filial TEXT,
+    codigo TEXT,
+    telefone TEXT,
+    grupo TEXT
+);
+
+CREATE TABLE IF NOT EXISTS historico_uso (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    filial_id INTEGER,
+    uso_dados REAL,
+    porcentagem REAL,
+    data_coleta DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(filial_id) REFERENCES filial(id)
+);
+
+```
+
+---
+
+## 🖥️ Como Executar
+
+O script está configurado para rodar em modo **headless** (sem interface visual).
+
+```bash
+python seu_arquivo.py
+
+```
+
+* **Lógica de Reset:** O script possui uma função `reset_db()` que limpa as tabelas no dia 23 de cada mês (período comum de fechamento de fatura) para reiniciar a contagem do histórico.
+* **Logs:** Qualquer erro durante a execução será gravado no arquivo `scraping_vivo.log`.
